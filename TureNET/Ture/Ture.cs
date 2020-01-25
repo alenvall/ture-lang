@@ -4,14 +4,13 @@ namespace Ture
 {
     class Ture
     {
+        private static Logger _log;
+
         static void Main(string[] args)
         {
-            Log("Woof!");
-        }
+            _log = new Logger();
 
-        static void Log(string text)
-        {
-            Console.WriteLine(text);
+            _log.Info("Woof!");
         }
     }
 }
