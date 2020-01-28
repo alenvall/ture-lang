@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Ture
 {
@@ -10,7 +8,7 @@ namespace Ture
 
         public void Debug(string text)
         {
-            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
             Console.WriteLine(text);
             Console.ResetColor();
         }
@@ -23,14 +21,14 @@ namespace Ture
         public void Warn(string text)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"WARN: {text}");
+            Console.WriteLine($"Warn: {text}");
             Console.ResetColor();
         }
 
         public void Error(string text)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"ERROR: {text}");
+            Console.WriteLine($"Error: {text}");
             Console.ResetColor();
         }
     }
