@@ -7,13 +7,14 @@ namespace Ture
     class Ture
     {
         private const string VER = "0.0.1";
-        private static Logger log;
+        private static readonly Logger log = new Logger();
+        private static readonly Interpreter interpreter = new Interpreter();
+
         private static bool ErrorOccured = false;
+        private static bool RuntimeErrorOccured = false;
 
         static void Main(string[] args)
         {
-            log = new Logger();
-
             if (args.Length > 1)
             {
                 log.Info("Woof! Usage: ture [script.tr]");
@@ -62,7 +63,7 @@ namespace Ture
             if (source.Length > 0)
             {
                 PrintIntro();
-                log.Info($"Woof! Scanning \"{fileName}\"...");
+                log.Info($"Woof! Running \"{fileName}\"...");
                 Run(source);
             }
 
@@ -70,6 +71,12 @@ namespace Ture
             {
                 log.Error($"Encountered one or more errors while parsing \"{fileName}\"!");
                 Environment.Exit(65);
+            }
+
+            if (RuntimeErrorOccured)
+            {
+                log.Error($"Runtime error occured!");
+                Environment.Exit(70);
             }
         }
 
@@ -100,7 +107,7 @@ namespace Ture
                 return;
             }
 
-            log.Debug(new TreePrinter().Print(expression));
+            log.Info(interpreter.Interpret(expression));
         }
 
         public static void Report(int lineNumber, string where, string message)
@@ -113,12 +120,18 @@ namespace Ture
         {
             if (token.Type == TokenType.EOF)
             {
-                Report(token.LineNumber, " at end", message);
+                Report(token.LineNumber, "at end", message);
             }
             else
             {
-                Report(token.LineNumber, " at \"" + token.Lexeme + "\"", message);
+                Report(token.LineNumber, "at \"" + token.Lexeme + "\"", message);
             }
+        }
+
+        public static void RuntimeError(RuntimeError error)
+        {
+            log.Error($"[line {error.Token.LineNumber}] {error.Message}");
+            RuntimeErrorOccured = true;
         }
     }
 }
