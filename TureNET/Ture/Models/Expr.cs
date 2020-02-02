@@ -9,6 +9,7 @@ namespace Ture.Models
         {
             public R VisitAssignExpr(Assign expr);
             public R VisitBinaryExpr(Binary expr);
+            public R VisitCallExpr(Call expr);
             public R VisitGroupingExpr(Grouping expr);
             public R VisitLiteralExpr(Literal expr);
             public R VisitLogicalExpr(Logical expr);
@@ -51,6 +52,25 @@ namespace Ture.Models
             public override R Accept<R>(IVisitor<R> visitor)
             {
                 return visitor.VisitBinaryExpr(this);
+            }
+        }
+
+        public class Call : Expr
+        {
+            public Expr Callee;
+            public Token Paren;
+            public ICollection<Expr> Arguments;
+
+            public Call(Expr callee, Token paren, ICollection<Expr> arguments)
+            {
+                Callee = callee;
+                Paren = paren;
+                Arguments = arguments;
+            }
+
+            public override R Accept<R>(IVisitor<R> visitor)
+            {
+                return visitor.VisitCallExpr(this);
             }
         }
 

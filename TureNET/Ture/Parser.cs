@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Ture.Core;
 using Ture.Models;
 
 using static Ture.Models.TokenType;
@@ -39,10 +40,16 @@ namespace Ture
         {
             try
             {
+                if (Match(FUNCTION))
+                {
+                    return Function("function");
+                }
+
                 if (Match(VAR))
                 {
                     return VarDeclaration();
                 }
+
                 return Statement();
             }
             catch (ParseError)
@@ -67,6 +74,11 @@ namespace Ture
             if (Match(PRINT))
             {
                 return PrintStatement();
+            }
+
+            if (Match(RETURN))
+            {
+                return ReturnStatement();
             }
 
             if (Match(WHILE))
@@ -163,6 +175,19 @@ namespace Ture
             return new Stmt.Print(value);
         }
 
+        private Stmt ReturnStatement()
+        {
+            Token keyword = Previous();
+            Expr value = null;
+            if (!Check(SEMICOLON))
+            {
+                value = Expression();
+            }
+
+            Consume(SEMICOLON, "Expect \";\" after return value");
+            return new Stmt.Return(keyword, value);
+        }
+
         private Stmt VarDeclaration()
         {
             Token name = Consume(IDENTIFIER, "Expected variable name");
@@ -193,6 +218,35 @@ namespace Ture
             Expr expr = Expression();
             Consume(SEMICOLON, "Expected \";\" after expression.");
             return new Stmt.Expression(expr);
+        }
+
+        private Stmt.Function Function(string kind)
+        {
+            Token name = Consume(IDENTIFIER, "Expected \"" + kind + " name");
+
+            Consume(LEFT_PAREN, "Expected \"(\" after " + name + " name");
+
+            IList<Token> parameters = new List<Token>();
+
+            if (!Check(RIGHT_PAREN))
+            {
+                do
+                {
+                    if (parameters.Count > Constants.MAX_COUNT_ARGUMENTS)
+                    {
+                        Error(Peek(), "Cannot have more than 255 parameters");
+                    }
+
+                    parameters.Add(Consume(IDENTIFIER, "Expected paramter name"));
+                } while (Match(COMMA));
+            }
+
+            Consume(RIGHT_PAREN, "Expected \")\" after parameters");
+            Consume(LEFT_BRACE, "Expected \"{\" before " + kind + " body");
+
+            ICollection<Stmt> body = Block();
+
+            return new Stmt.Function(name, parameters, body);
         }
 
         private ICollection<Stmt> Block()
@@ -322,7 +376,47 @@ namespace Ture
                 return new Expr.Unary(oper, right);
             }
 
-            return Primary();
+            return Call();
+        }
+
+        private Expr FinishCall(Expr callee)
+        {
+            ICollection<Expr> arguments = new List<Expr>();
+
+            if (!Check(RIGHT_PAREN))
+            {
+                do
+                {
+                    if (arguments.Count >= Constants.MAX_COUNT_ARGUMENTS)
+                    {
+                        Error(Peek(), "Cannot have more than 255 arguments");
+                    }
+                    arguments.Add(Expression());
+                } while (Match(COMMA));
+            }
+
+            Token paren = Consume(RIGHT_PAREN, "Expected \")\" after arguments");
+
+            return new Expr.Call(callee, paren, arguments);
+        }
+
+        private Expr Call()
+        {
+            Expr expr = Primary();
+
+            while (true)
+            {
+                if (Match(LEFT_PAREN))
+                {
+                    expr = FinishCall(expr);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return expr;
         }
 
         private Expr Primary()

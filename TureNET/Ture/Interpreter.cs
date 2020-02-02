@@ -1,13 +1,16 @@
 ﻿using System.Collections.Generic;
 using Ture.Core;
+using Ture.Core.Native;
 using Ture.Models;
+
 using static Ture.Models.TokenType;
 
 namespace Ture
 {
     public class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
     {
-        private Environment environment = new Environment();
+        public readonly Environment Globals = new Environment();
+        private Environment environment;
 
         public string Interpret(ICollection<Stmt> statements)
         {
@@ -26,7 +29,13 @@ namespace Ture
             return null;
         }
 
-        public Interpreter() { }
+        public Interpreter()
+        {
+            environment = Globals;
+
+            var clock = new Clock();
+            Globals.Define(clock.GetType().Name, clock);
+        }
 
         public object VisitLiteralExpr(Expr.Literal expr)
         {
@@ -142,6 +151,33 @@ namespace Ture
             return null;
         }
 
+        public object VisitCallExpr(Expr.Call expr)
+        {
+            object callee = Evaluate(expr.Callee);
+
+            IList<object> arguments = new List<object>();
+
+            foreach (var argument in expr.Arguments)
+            {
+                arguments.Add(Evaluate(argument));
+            }
+
+
+            if (!(callee is ICallable))
+            {
+                throw new RuntimeError(expr.Paren, "Can only call functions and classes");
+            }
+
+            ICallable function = (ICallable)callee;
+
+            if (arguments.Count != function.Arity())
+            {
+                throw new RuntimeError(expr.Paren, "Expected " + function.Arity() + " arguments but got " + arguments.Count);
+            }
+
+            return function.Call(this, arguments);
+        }
+
         private void CheckNumberOperand(Token oper, object operand)
         {
             if (operand is double)
@@ -172,7 +208,7 @@ namespace Ture
             stmt.Accept(this);
         }
 
-        private void ExecuteBlock(ICollection<Stmt> statements, Environment environment)
+        public void ExecuteBlock(ICollection<Stmt> statements, Environment environment)
         {
             Environment previous = this.environment;
 
@@ -204,6 +240,13 @@ namespace Ture
             return null;
         }
 
+        public object VisitFunctionStmt(Stmt.Function stmt)
+        {
+            Function function = new Function(stmt);
+            environment.Define(stmt.Name.Lexeme, function);
+            return null;
+        }
+
         public object VisitIfStmt(Stmt.If stmt)
         {
             if (IsTruthy(Evaluate(stmt.Condition)))
@@ -224,6 +267,18 @@ namespace Ture
             Ture.Print(value.ToString());
 
             return null;
+        }
+
+        public object VisitReturnStmt(Stmt.Return stmt)
+        {
+            object value = null;
+
+            if (stmt.Value != null)
+            {
+                value = Evaluate(stmt.Value);
+            }
+
+            throw new Return(value);
         }
 
         public object VisitVarStmt(Stmt.Var stmt)

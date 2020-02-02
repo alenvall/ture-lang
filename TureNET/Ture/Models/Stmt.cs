@@ -9,8 +9,10 @@ namespace Ture.Models
         {
             public R VisitBlockStmt(Block stmt);
             public R VisitExpressionStmt(Expression stmt);
+            public R VisitFunctionStmt(Function stmt);
             public R VisitIfStmt(If stmt);
             public R VisitPrintStmt(Print stmt);
+            public R VisitReturnStmt(Return stmt);
             public R VisitVarStmt(Var stmt);
             public R VisitWhileStmt(While stmt);
         }
@@ -47,6 +49,25 @@ namespace Ture.Models
             }
         }
 
+        public class Function : Stmt
+        {
+            public Token Name;
+            public IList<Token> Parameters;
+            public ICollection<Stmt> Body;
+
+            public Function(Token name, IList<Token> parameters, ICollection<Stmt> body)
+            {
+                Name = name;
+                Parameters = parameters;
+                Body = body;
+            }
+
+            public override R Accept<R>(IVisitor<R> visitor)
+            {
+                return visitor.VisitFunctionStmt(this);
+            }
+        }
+
         public class If : Stmt
         {
             public Expr Condition;
@@ -78,6 +99,23 @@ namespace Ture.Models
             public override R Accept<R>(IVisitor<R> visitor)
             {
                 return visitor.VisitPrintStmt(this);
+            }
+        }
+
+        public class Return : Stmt
+        {
+            public Token Keyword;
+            public Expr Value;
+
+            public Return(Token keyword, Expr value)
+            {
+                Keyword = keyword;
+                Value = value;
+            }
+
+            public override R Accept<R>(IVisitor<R> visitor)
+            {
+                return visitor.VisitReturnStmt(this);
             }
         }
 
