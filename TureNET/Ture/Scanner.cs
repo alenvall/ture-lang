@@ -76,7 +76,7 @@ namespace Ture
                     }
                     else
                     {
-                        Ture.Error(line, "Unexpected character.");
+                        Ture.Report(line, null, "Unexpected character.");
                     }
                     break;
                 case '|':
@@ -86,7 +86,7 @@ namespace Ture
                     }
                     else
                     {
-                        Ture.Error(line, "Unexpected character.");
+                        Ture.Report(line, null, "Unexpected character.");
                     }
                     break;
                 case '/':
@@ -122,7 +122,7 @@ namespace Ture
                     }
                     else
                     {
-                        Ture.Error(line, "Unexpected character.");
+                        Ture.Report(line, null, "Unexpected character.");
                     }
                     break;
             }
@@ -205,7 +205,7 @@ namespace Ture
             }
             else
             {
-                Ture.Error(line, "Unterminated string!");
+                Ture.Report(line, null, "Unterminated string!");
             }
         }
 
