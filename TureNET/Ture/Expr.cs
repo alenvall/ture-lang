@@ -2,7 +2,18 @@ using System;
 
 namespace Ture
 {
-    public abstract class Expr { }
+    public abstract class Expr
+    {
+        public interface IVisitor<R>
+        {
+            public R VisitBinaryExpr(Binary expr);
+            public R VisitGroupingExpr(Grouping expr);
+            public R VisitLiteralExpr(Literal expr);
+            public R VisitUnaryExpr(Unary expr);
+        }
+
+        public abstract R Accept<R>(IVisitor<R> visitor);
+    }
 
     public class Binary : Expr
     {
@@ -16,6 +27,11 @@ namespace Ture
             Oper = oper;
             Right = right;
         }
+
+        public override R Accept<R>(IVisitor<R> visitor)
+        {
+            return visitor.VisitBinaryExpr(this);
+        }
     }
 
     public class Grouping : Expr
@@ -26,6 +42,11 @@ namespace Ture
         {
             Expression = expression;
         }
+
+        public override R Accept<R>(IVisitor<R> visitor)
+        {
+            return visitor.VisitGroupingExpr(this);
+        }
     }
 
     public class Literal : Expr
@@ -35,6 +56,11 @@ namespace Ture
         public Literal(Object value)
         {
             Value = value;
+        }
+
+        public override R Accept<R>(IVisitor<R> visitor)
+        {
+            return visitor.VisitLiteralExpr(this);
         }
     }
 
@@ -48,6 +74,12 @@ namespace Ture
             Oper = oper;
             Right = right;
         }
+
+        public override R Accept<R>(IVisitor<R> visitor)
+        {
+            return visitor.VisitUnaryExpr(this);
+        }
     }
+
 
 }

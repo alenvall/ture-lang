@@ -87,21 +87,38 @@ namespace Ture
             }
         }
 
-        private static void Run(string expression)
+        private static void Run(string source)
         {
-            Scanner scanner = new Scanner(expression);
+            var scanner = new Scanner(source);
             List<Token> tokens = scanner.ScanTokens();
 
-            foreach (var token in tokens)
+            var parser = new Parser(tokens);
+            var expression = parser.Parse();
+
+            if (ErrorOccured)
             {
-                log.Debug(token.ToString());
+                return;
             }
+
+            log.Debug(new TreePrinter().Print(expression));
         }
 
-        public static void Error(int lineNumber, string message)
+        public static void Report(int lineNumber, string where, string message)
         {
-            log.Error($"[line {lineNumber}] - {message}");
+            log.Error($"[line {lineNumber}] - {message} {where}");
             ErrorOccured = true;
+        }
+
+        public static void Error(Token token, string message)
+        {
+            if (token.Type == TokenType.EOF)
+            {
+                Report(token.LineNumber, " at end", message);
+            }
+            else
+            {
+                Report(token.LineNumber, " at \"" + token.Lexeme + "\"", message);
+            }
         }
     }
 }

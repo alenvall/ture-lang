@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 using static Ture.TokenType;
 
@@ -6,12 +7,29 @@ namespace Ture
 {
     public class Parser
     {
+        private class ParseError : Exception { }
+
         private readonly IList<Token> tokens;
         private int current = 0;
 
         public Parser(IList<Token> tokens)
         {
             this.tokens = tokens;
+        }
+
+        public Expr Parse()
+        {
+            Expr expr;
+            try
+            {
+                expr = Expression();
+            }
+            catch (ParseError)
+            {
+                return null;
+            }
+
+            return expr;
         }
 
         private Expr Expression()
@@ -65,7 +83,7 @@ namespace Ture
         {
             Expr expr = Unary();
 
-            while(Match(SLASH, STAR))
+            while (Match(SLASH, STAR))
             {
                 Token oper = Previous();
                 Expr right = Unary();
@@ -108,10 +126,12 @@ namespace Ture
             if (Match(LEFT_PAREN))
             {
                 Expr expr = Expression();
-                Consume(RIGHT_PAREN, "Expect \")\" after expreession.");
+                Consume(RIGHT_PAREN, "Expected \")\" after expression");
 
                 return new Grouping(expr);
             }
+
+            throw Error(Peek(), "Expected expression");
         }
 
         private bool Match(params TokenType[] types)
@@ -128,12 +148,26 @@ namespace Ture
             return false;
         }
 
+        private Token Consume(TokenType type, string message)
+        {
+            if (Check(type))
+            {
+                return Advance();
+            }
+
+            throw Error(Peek(), message);
+        }
+
         private Token Advance()
         {
             if (!IsAtEnd())
             {
                 current++;
                 return Previous();
+            }
+            else
+            {
+                return Peek();
             }
         }
 
@@ -160,6 +194,41 @@ namespace Ture
         private Token Previous()
         {
             return tokens[current - 1];
+        }
+
+        private ParseError Error(Token token, string message)
+        {
+            Ture.Error(token, message);
+
+            return new ParseError();
+        }
+
+        private void Synchronize()
+        {
+            Advance();
+
+            while (!IsAtEnd())
+            {
+                if (Previous().Type == SEMICOLON)
+                {
+                    return;
+                }
+
+                switch (Peek().Type)
+                {
+                    case CLASS:
+                    case FUNCTION:
+                    case VAR:
+                    case FOR:
+                    case IF:
+                    case WHILE:
+                    case PRINT:
+                    case RETURN:
+                        return;
+                }
+
+                Advance();
+            }
         }
     }
 }
