@@ -8,7 +8,7 @@ namespace Ture
 {
     class Ture
     {
-        private const string VER = "0.0.1";
+        private const string VER = "1.0.0";
         private static readonly Logger log = new Logger();
         private static readonly Interpreter interpreter = new Interpreter();
 
@@ -40,6 +40,7 @@ namespace Ture
             log.Info("  /,    /`   _");
             log.Info("  \\\\\"--\\\\   (_)");
             log.Info($"\nTure [ver. {VER}]");
+            log.Info($"");
             Console.ResetColor();
         }
 
@@ -65,7 +66,6 @@ namespace Ture
             if (source.Length > 0)
             {
                 PrintIntro();
-                log.Info($"Woof! Running \"{fileName}\"...\n");
                 Run(source);
             }
 
@@ -90,7 +90,7 @@ namespace Ture
             {
                 ErrorOccured = false;
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.Write("\n> ");
+                Console.Write("> ");
                 Console.ResetColor();
                 Run(Console.ReadLine());
             }

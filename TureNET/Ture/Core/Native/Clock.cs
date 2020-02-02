@@ -12,7 +12,7 @@ namespace Ture.Core.Native
 
         public object Call(Interpreter interpreter, IList<object> arguments)
         {
-            return (double)DateTime.UtcNow.Second;
+            return (double)DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
     }
 

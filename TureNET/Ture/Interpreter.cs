@@ -34,7 +34,7 @@ namespace Ture
             environment = Globals;
 
             var clock = new Clock();
-            Globals.Define(clock.GetType().Name, clock);
+            Globals.Define(clock.GetType().Name.ToLower(), clock);
         }
 
         public object VisitLiteralExpr(Expr.Literal expr)
