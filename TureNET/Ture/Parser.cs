@@ -120,7 +120,7 @@ namespace Ture
             {
                 condition = Expression();
             }
-            Consume(SEMICOLON, "Expected \";\" after loop condition.");
+            Consume(SEMICOLON, "Expected \";\" after loop condition");
 
             Expr increment = null;
 
@@ -128,7 +128,7 @@ namespace Ture
             {
                 increment = Expression();
             }
-            Consume(SEMICOLON, "Expected \")\" after clauses.");
+            Consume(RIGHT_PAREN, "Expected \")\" after clauses");
 
             Stmt body = Statement();
 
