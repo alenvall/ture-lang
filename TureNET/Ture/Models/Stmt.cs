@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Ture.Models
@@ -8,8 +9,10 @@ namespace Ture.Models
         {
             public R VisitBlockStmt(Block stmt);
             public R VisitExpressionStmt(Expression stmt);
+            public R VisitIfStmt(If stmt);
             public R VisitPrintStmt(Print stmt);
             public R VisitVarStmt(Var stmt);
+            public R VisitWhileStmt(While stmt);
         }
 
         public abstract R Accept<R>(IVisitor<R> visitor);
@@ -44,6 +47,25 @@ namespace Ture.Models
             }
         }
 
+        public class If : Stmt
+        {
+            public Expr Condition;
+            public Stmt ThenBranch;
+            public Stmt ElseBranch;
+
+            public If(Expr condition, Stmt thenBranch, Stmt elseBranch)
+            {
+                Condition = condition;
+                ThenBranch = thenBranch;
+                ElseBranch = elseBranch;
+            }
+
+            public override R Accept<R>(IVisitor<R> visitor)
+            {
+                return visitor.VisitIfStmt(this);
+            }
+        }
+
         public class Print : Stmt
         {
             public Expr Expr;
@@ -73,6 +95,23 @@ namespace Ture.Models
             public override R Accept<R>(IVisitor<R> visitor)
             {
                 return visitor.VisitVarStmt(this);
+            }
+        }
+
+        public class While : Stmt
+        {
+            public Expr Condition;
+            public Stmt Body;
+
+            public While(Expr condition, Stmt body)
+            {
+                Condition = condition;
+                Body = body;
+            }
+
+            public override R Accept<R>(IVisitor<R> visitor)
+            {
+                return visitor.VisitWhileStmt(this);
             }
         }
 

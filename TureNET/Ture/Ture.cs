@@ -65,7 +65,7 @@ namespace Ture
             if (source.Length > 0)
             {
                 PrintIntro();
-                log.Info($"Woof! Running \"{fileName}\"...");
+                log.Info($"Woof! Running \"{fileName}\"...\n");
                 Run(source);
             }
 

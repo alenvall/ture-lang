@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Ture.Models
 {
@@ -10,6 +11,7 @@ namespace Ture.Models
             public R VisitBinaryExpr(Binary expr);
             public R VisitGroupingExpr(Grouping expr);
             public R VisitLiteralExpr(Literal expr);
+            public R VisitLogicalExpr(Logical expr);
             public R VisitUnaryExpr(Unary expr);
             public R VisitVariableExpr(Variable expr);
         }
@@ -79,6 +81,25 @@ namespace Ture.Models
             public override R Accept<R>(IVisitor<R> visitor)
             {
                 return visitor.VisitLiteralExpr(this);
+            }
+        }
+
+        public class Logical : Expr
+        {
+            public Expr Left;
+            public Token Oper;
+            public Expr Right;
+
+            public Logical(Expr left, Token oper, Expr right)
+            {
+                Left = left;
+                Oper = oper;
+                Right = right;
+            }
+
+            public override R Accept<R>(IVisitor<R> visitor)
+            {
+                return visitor.VisitLogicalExpr(this);
             }
         }
 

@@ -54,9 +54,24 @@ namespace Ture
 
         private Stmt Statement()
         {
+            if (Match(FOR))
+            {
+                return ForStatement();
+            }
+
+            if (Match(IF))
+            {
+                return IfStatement();
+            }
+
             if (Match(PRINT))
             {
                 return PrintStatement();
+            }
+
+            if (Match(WHILE))
+            {
+                return WhileStatement();
             }
 
             if (Match(LEFT_BRACE))
@@ -65,6 +80,80 @@ namespace Ture
             }
 
             return ExpressionStatement();
+        }
+
+
+        private Stmt ForStatement()
+        {
+            Consume(LEFT_PAREN, "Expected \"(\" after \"for\".");
+
+            Stmt initializer;
+
+            if (Match(SEMICOLON))
+            {
+                initializer = null;
+            }
+            else if (Match(VAR))
+            {
+                initializer = VarDeclaration();
+            }
+            else
+            {
+                initializer = ExpressionStatement();
+            }
+
+            Expr condition = null;
+
+            if (!Check(SEMICOLON))
+            {
+                condition = Expression();
+            }
+            Consume(SEMICOLON, "Expected \";\" after loop condition.");
+
+            Expr increment = null;
+
+            if (!Check(RIGHT_PAREN))
+            {
+                increment = Expression();
+            }
+            Consume(SEMICOLON, "Expected \")\" after clauses.");
+
+            Stmt body = Statement();
+
+            if (increment != null)
+            {
+                body = new Stmt.Block(new List<Stmt>() { body, new Stmt.Expression(increment) });
+            }
+
+            if (condition == null)
+            {
+                condition = new Expr.Literal(true);
+            }
+
+            body = new Stmt.While(condition, body);
+
+            if (initializer != null)
+            {
+                body = new Stmt.Block(new List<Stmt>() { initializer, body });
+            }
+
+            return body;
+        }
+
+        private Stmt IfStatement()
+        {
+            Consume(LEFT_PAREN, "Expected \"(\" after \"if\".");
+            Expr condition = Expression();
+            Consume(RIGHT_PAREN, "Expected \")\" after condition.");
+
+            Stmt thenBranch = Statement();
+            Stmt elseBranch = null;
+            if (Match(ELSE))
+            {
+                elseBranch = Statement();
+            }
+
+            return new Stmt.If(condition, thenBranch, elseBranch);
         }
 
         private Stmt PrintStatement()
@@ -76,7 +165,7 @@ namespace Ture
 
         private Stmt VarDeclaration()
         {
-            Token name = Consume(IDENTIFIER, "Expected variable name.");
+            Token name = Consume(IDENTIFIER, "Expected variable name");
 
             Expr initializer = null;
             if (Match(EQUAL))
@@ -84,9 +173,19 @@ namespace Ture
                 initializer = Expression();
             }
 
-            Consume(SEMICOLON, "Expected \";\" after variabled declaration");
+            Consume(SEMICOLON, "Expected \";\" after variable declaration");
 
             return new Stmt.Var(name, initializer);
+        }
+
+        private Stmt WhileStatement()
+        {
+            Consume(LEFT_PAREN, "Expected \"(\" after \"while\".");
+            Expr condition = Expression();
+            Consume(RIGHT_PAREN, "Expected \")\" after loop condition");
+            Stmt body = Statement();
+
+            return new Stmt.While(condition, body);
         }
 
         private Stmt ExpressionStatement()
@@ -105,13 +204,13 @@ namespace Ture
                 statements.Add(Declaration());
             }
 
-            Consume(RIGHT_BRACE, "Expected \"}\" after block.");
+            Consume(RIGHT_BRACE, "Expected \"}\" after block");
             return statements;
         }
 
         private Expr Assignment()
         {
-            Expr expr = Equality();
+            Expr expr = Or();
 
             if (Match(EQUAL))
             {
@@ -124,7 +223,35 @@ namespace Ture
                     return new Expr.Assign(name, value);
                 }
 
-                Error(equals, "Invalid assignment target.");
+                Error(equals, "Invalid assignment target");
+            }
+
+            return expr;
+        }
+
+        private Expr Or()
+        {
+            Expr expr = And();
+
+            while (Match(OR))
+            {
+                Token oper = Previous();
+                Expr right = And();
+                expr = new Expr.Logical(expr, oper, right);
+            }
+
+            return expr;
+        }
+
+        private Expr And()
+        {
+            Expr expr = Equality();
+
+            while (Match(AND))
+            {
+                Token oper = Previous();
+                Expr right = Equality();
+                expr = new Expr.Logical(expr, oper, right);
             }
 
             return expr;
