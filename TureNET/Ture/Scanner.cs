@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using Ture.Models;
 
-using static Ture.TokenType;
+using static Ture.Models.TokenType;
 
 namespace Ture
 {
@@ -42,6 +43,7 @@ namespace Ture
             { "if", IF },
             { "null", NULL },
             { "woof", PRINT },
+            { "print", PRINT },
             { "return", RETURN },
             { "super", SUPER },
             { "this", THIS },

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Ture.Core;
+using Ture.Models;
 
 namespace Ture
 {
@@ -18,7 +20,7 @@ namespace Ture
             if (args.Length > 1)
             {
                 log.Info("Woof! Usage: ture [script.tr]");
-                Environment.Exit(64);
+                System.Environment.Exit(64);
             }
             else if (args.Length == 1)
             {
@@ -70,13 +72,13 @@ namespace Ture
             if (ErrorOccured)
             {
                 log.Error($"Encountered one or more errors while parsing \"{fileName}\"!");
-                Environment.Exit(65);
+                System.Environment.Exit(65);
             }
 
             if (RuntimeErrorOccured)
             {
                 log.Error($"Runtime error occured!");
-                Environment.Exit(70);
+                System.Environment.Exit(70);
             }
         }
 
@@ -100,14 +102,15 @@ namespace Ture
             List<Token> tokens = scanner.ScanTokens();
 
             var parser = new Parser(tokens);
-            var expression = parser.Parse();
+
+            var statements = parser.Parse();
 
             if (ErrorOccured)
             {
                 return;
             }
 
-            log.Info(interpreter.Interpret(expression));
+            log.Info(interpreter.Interpret(statements));
         }
 
         public static void Report(int lineNumber, string where, string message)
@@ -132,6 +135,11 @@ namespace Ture
         {
             log.Error($"[line {error.Token.LineNumber}] {error.Message}");
             RuntimeErrorOccured = true;
+        }
+
+        public static void Print(string text)
+        {
+            log.Info(text);
         }
     }
 }

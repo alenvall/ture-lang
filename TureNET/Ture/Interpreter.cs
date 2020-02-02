@@ -1,15 +1,22 @@
-﻿using static Ture.TokenType;
+﻿using System.Collections.Generic;
+using Ture.Core;
+using Ture.Models;
+using static Ture.Models.TokenType;
 
 namespace Ture
 {
-    public class Interpreter : Expr.IVisitor<object>
+    public class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
     {
-        public string Interpret(Expr expression)
+        private Environment environment = new Environment();
+
+        public string Interpret(ICollection<Stmt> statements)
         {
             try
             {
-                object value = Evaluate(expression);
-                return value.ToString();
+                foreach (var statement in statements)
+                {
+                    Execute(statement);
+                }
             }
             catch (RuntimeError error)
             {
@@ -21,17 +28,17 @@ namespace Ture
 
         public Interpreter() { }
 
-        public object VisitLiteralExpr(Literal expr)
+        public object VisitLiteralExpr(Expr.Literal expr)
         {
             return expr.Value;
         }
 
-        public object VisitGroupingExpr(Grouping expr)
+        public object VisitGroupingExpr(Expr.Grouping expr)
         {
             return Evaluate(expr.Expression);
         }
 
-        public object VisitUnaryExpr(Unary expr)
+        public object VisitUnaryExpr(Expr.Unary expr)
         {
             object right = Evaluate(expr.Right);
 
@@ -47,7 +54,12 @@ namespace Ture
             return null;
         }
 
-        public object VisitBinaryExpr(Binary expr)
+        public object VisitVariableExpr(Expr.Variable expr)
+        {
+            return environment.Get(expr.Name);
+        }
+
+        public object VisitBinaryExpr(Expr.Binary expr)
         {
             object left = Evaluate(expr.Left);
             object right = Evaluate(expr.Right);
@@ -133,6 +145,73 @@ namespace Ture
             return expr.Accept(this);
         }
 
+        private void Execute(Stmt stmt)
+        {
+            stmt.Accept(this);
+        }
+
+        private void ExecuteBlock(ICollection<Stmt> statements, Environment environment)
+        {
+            Environment previous = this.environment;
+
+            try
+            {
+                this.environment = environment;
+
+                foreach (var statement in statements)
+                {
+                    Execute(statement);
+                }
+            }
+            finally
+            {
+                this.environment = previous;
+            }
+        }
+
+        public object VisitBlockStmt(Stmt.Block stmt)
+        {
+            ExecuteBlock(stmt.Statements, new Environment(environment));
+            return null;
+        }
+
+        public object VisitExpressionStmt(Stmt.Expression stmt)
+        {
+            Evaluate(stmt.Expr);
+
+            return null;
+        }
+
+        public object VisitPrintStmt(Stmt.Print stmt)
+        {
+            object value = Evaluate(stmt.Expr);
+            Ture.Print(value.ToString());
+
+            return null;
+        }
+
+        public object VisitVarStmt(Stmt.Var stmt)
+        {
+            object value = null;
+
+            if (stmt.Initializer != null)
+            {
+                value = Evaluate(stmt.Initializer);
+            }
+
+            environment.Define(stmt.Name.Lexeme, value);
+
+            return null;
+        }
+
+        public object VisitAssignExpr(Expr.Assign expr)
+        {
+            object value = Evaluate(expr.Value);
+
+            environment.Assign(expr.Name, value);
+            return value;
+        }
+
         private bool IsTruthy(object obj)
         {
             if (obj == null)
@@ -161,5 +240,6 @@ namespace Ture
 
             return a.Equals(b);
         }
+
     }
 }

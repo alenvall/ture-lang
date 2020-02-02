@@ -1,4 +1,4 @@
-﻿namespace Ture
+﻿namespace Ture.Models
 {
     public enum TokenType
     {

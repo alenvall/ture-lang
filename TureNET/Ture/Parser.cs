@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using Ture.Models;
 
-using static Ture.TokenType;
+using static Ture.Models.TokenType;
 
 namespace Ture
 {
@@ -17,24 +18,116 @@ namespace Ture
             this.tokens = tokens;
         }
 
-        public Expr Parse()
+        public ICollection<Stmt> Parse()
         {
-            Expr expr;
-            try
+            var statements = new List<Stmt>();
+
+            while (!IsAtEnd())
             {
-                expr = Expression();
-            }
-            catch (ParseError)
-            {
-                return null;
+                statements.Add(Declaration());
             }
 
-            return expr;
+            return statements;
         }
 
         private Expr Expression()
         {
-            return Equality();
+            return Assignment();
+        }
+
+        private Stmt Declaration()
+        {
+            try
+            {
+                if (Match(VAR))
+                {
+                    return VarDeclaration();
+                }
+                return Statement();
+            }
+            catch (ParseError)
+            {
+                Synchronize();
+                return null;
+            }
+        }
+
+        private Stmt Statement()
+        {
+            if (Match(PRINT))
+            {
+                return PrintStatement();
+            }
+
+            if (Match(LEFT_BRACE))
+            {
+                return new Stmt.Block(Block());
+            }
+
+            return ExpressionStatement();
+        }
+
+        private Stmt PrintStatement()
+        {
+            Expr value = Expression();
+            Consume(SEMICOLON, "Expected \";\" after value.");
+            return new Stmt.Print(value);
+        }
+
+        private Stmt VarDeclaration()
+        {
+            Token name = Consume(IDENTIFIER, "Expected variable name.");
+
+            Expr initializer = null;
+            if (Match(EQUAL))
+            {
+                initializer = Expression();
+            }
+
+            Consume(SEMICOLON, "Expected \";\" after variabled declaration");
+
+            return new Stmt.Var(name, initializer);
+        }
+
+        private Stmt ExpressionStatement()
+        {
+            Expr expr = Expression();
+            Consume(SEMICOLON, "Expected \";\" after expression.");
+            return new Stmt.Expression(expr);
+        }
+
+        private ICollection<Stmt> Block()
+        {
+            List<Stmt> statements = new List<Stmt>();
+
+            while (!Check(RIGHT_BRACE) && !IsAtEnd())
+            {
+                statements.Add(Declaration());
+            }
+
+            Consume(RIGHT_BRACE, "Expected \"}\" after block.");
+            return statements;
+        }
+
+        private Expr Assignment()
+        {
+            Expr expr = Equality();
+
+            if (Match(EQUAL))
+            {
+                Token equals = Previous();
+                Expr value = Assignment();
+
+                if (expr is Expr.Variable)
+                {
+                    Token name = ((Expr.Variable)expr).Name;
+                    return new Expr.Assign(name, value);
+                }
+
+                Error(equals, "Invalid assignment target.");
+            }
+
+            return expr;
         }
 
         private Expr Equality()
@@ -45,7 +138,7 @@ namespace Ture
             {
                 Token oper = Previous();
                 Expr right = Comparsion();
-                expr = new Binary(expr, oper, right);
+                expr = new Expr.Binary(expr, oper, right);
             }
 
             return expr;
@@ -59,7 +152,7 @@ namespace Ture
             {
                 Token oper = Previous();
                 Expr right = Addition();
-                expr = new Binary(expr, oper, right);
+                expr = new Expr.Binary(expr, oper, right);
             }
 
             return expr;
@@ -73,7 +166,7 @@ namespace Ture
             {
                 Token oper = Previous();
                 Expr right = Multiplication();
-                expr = new Binary(expr, oper, right);
+                expr = new Expr.Binary(expr, oper, right);
             }
 
             return expr;
@@ -87,7 +180,7 @@ namespace Ture
             {
                 Token oper = Previous();
                 Expr right = Unary();
-                expr = new Binary(expr, oper, right);
+                expr = new Expr.Binary(expr, oper, right);
             }
 
             return expr;
@@ -99,7 +192,7 @@ namespace Ture
             {
                 Token oper = Previous();
                 Expr right = Unary();
-                return new Unary(oper, right);
+                return new Expr.Unary(oper, right);
             }
 
             return Primary();
@@ -109,26 +202,35 @@ namespace Ture
         {
             if (Match(FALSE))
             {
-                return new Literal(false);
+                return new Expr.Literal(false);
             }
+
             if (Match(TRUE))
             {
-                return new Literal(true);
+                return new Expr.Literal(true);
             }
+
             if (Match(NULL))
             {
-                return new Literal(null);
+                return new Expr.Literal(null);
             }
+
             if (Match(NUMBER, STRING))
             {
-                return new Literal(Previous().Literal);
+                return new Expr.Literal(Previous().Literal);
             }
+
+            if (Match(IDENTIFIER))
+            {
+                return new Expr.Variable(Previous());
+            }
+
             if (Match(LEFT_PAREN))
             {
                 Expr expr = Expression();
                 Consume(RIGHT_PAREN, "Expected \")\" after expression");
 
-                return new Grouping(expr);
+                return new Expr.Grouping(expr);
             }
 
             throw Error(Peek(), "Expected expression");

@@ -1,6 +1,7 @@
 ﻿using System;
+using Ture.Models;
 
-namespace Ture
+namespace Ture.Core
 {
     public class RuntimeError : Exception
     {

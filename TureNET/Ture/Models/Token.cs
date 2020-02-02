@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Ture
+namespace Ture.Models
 {
     public class Token
     {
